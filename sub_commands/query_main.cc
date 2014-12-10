@@ -30,10 +30,11 @@
 namespace err = jellyfish::err;
 
 using jellyfish::mer_dna;
+using jellyfish::fullseedmer_dna;
 using jellyfish::mer_dna_bloom_counter;
 typedef std::vector<const char*> file_vector;
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::iterator> > sequence_parser;
-typedef jellyfish::mer_iterator<sequence_parser, mer_dna> mer_iterator;
+typedef jellyfish::mer_iterator<sequence_parser, mer_dna, fullseedmer_dna> mer_iterator;
 
 static query_main_cmdline args;
 

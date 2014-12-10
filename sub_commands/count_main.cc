@@ -55,13 +55,14 @@ template<typename DtnType>
 inline double as_seconds(DtnType dtn) { return duration_cast<duration<double>>(dtn).count(); }
 
 using jellyfish::mer_dna;
+using jellyfish::fullseedmer_dna;
 using jellyfish::mer_dna_bloom_counter;
 using jellyfish::mer_dna_bloom_filter;
 typedef std::vector<const char*> file_vector;
 
 // Types for parsing arbitrary sequence ignoring quality scores
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::const_iterator> > sequence_parser;
-typedef jellyfish::mer_iterator<sequence_parser, mer_dna> mer_iterator;
+typedef jellyfish::mer_iterator<sequence_parser, mer_dna, fullseedmer_dna> mer_iterator;
 
 // Types for parsing reads with quality score. Interface match type
 // above.
@@ -152,8 +153,10 @@ public:
     switch(op_) {
      case COUNT:
       for( ; mers; ++mers) {
-        if((*filter_)(*mers))
-          ary_.add(*mers, 1);
+    	const mer_dna mer(*mers);
+    	//std::cerr<<"mer:"<<mer.to_str()<<std::endl;
+        if((*filter_)(mer))
+          ary_.add(mer, 1);
         ++count;
       }
       break;
@@ -224,7 +227,9 @@ int count_main(int argc, char *argv[])
   if(args.min_qual_char_given && args.min_qual_char_arg.size() != 1)
     count_main_cmdline::error("[-Q, --min-qual-char] must be one character.");
 
-  mer_dna::k(args.mer_len_arg);
+  fullseedmer_dna::k(args.mer_len_arg); //TODO seed weight
+  //std::cerr<<std::endl<<"SSeed: "<<args.spaced_seed_arg<<std::endl;
+  mer_dna::k(args.mer_len_arg-5);
 
   std::unique_ptr<jellyfish::generator_manager> generator_manager;
   if(args.generator_given) {

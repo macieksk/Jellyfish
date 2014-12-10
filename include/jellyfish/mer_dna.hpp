@@ -723,7 +723,7 @@ typedef mer_dna_ns::mer_base_static<unsigned __int128, 0> mer_dna128;
 #endif
 
 typedef mer_dna64 mer_dna;
-
+typedef mer_dna_ns::mer_base_static<uint64_t, 1> fullseedmer_dna;
 } // namespace jellyfish
 
 #endif

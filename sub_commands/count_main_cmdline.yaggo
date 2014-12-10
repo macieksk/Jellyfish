@@ -7,6 +7,9 @@ option("mer-len", "m") {
 option("size", "s") {
   description "Initial hash size"
   uint64; suffix; required }
+option("Z", "spaced-seed") {
+  description "Spaced seed given in eg. ###__#_###_###"
+  c_string; typestr "Spaced seed" }
 option("threads", "t") {
   description "Number of threads"
   uint32; default "1" }

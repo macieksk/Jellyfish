@@ -43,9 +43,10 @@ inline double as_seconds(DtnType dtn) { return duration_cast<duration<double>>(d
 static bc_main_cmdline args; // Command line switches and arguments
 typedef std::vector<const char*> file_vector;
 using jellyfish::mer_dna;
+using jellyfish::fullseedmer_dna;
 using jellyfish::mer_dna_bloom_counter;
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::const_iterator> > sequence_parser;
-typedef jellyfish::mer_iterator<sequence_parser, jellyfish::mer_dna> mer_iterator;
+typedef jellyfish::mer_iterator<sequence_parser, mer_dna, fullseedmer_dna> mer_iterator;
 
 template<typename PathIterator>
 class mer_bloom_counter : public jellyfish::thread_exec {
