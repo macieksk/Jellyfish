@@ -27,13 +27,11 @@ class mer_iterator : public std::iterator<std::input_iterator_tag,MerType> {
   const char*                 cseq_;
   MerType                     ret_m_; // Returned squashed seed mer
   MerType                     ret_rcm_; // Returned squashed seed reverse complement mer
-  //MerType             m_; // mer
-  //MerType             rcm_; // reverse complement mer
   FullSeedMerType             m_; // mer
   FullSeedMerType             rcm_; // reverse complement mer
   unsigned int                filled_;
   const bool                  canonical_;
-  char*  					  mstr; //String used to reverse mers
+  char*  					  mstr; //String used to seed translate mers
 
 public:
   typedef MerType      mer_type;
@@ -85,7 +83,7 @@ public:
 	  return !canonical_ || ret_m_ < ret_rcm_ ? ret_m_ : ret_rcm_; }
   //const mer_type& fullmer() const { return !canonical_ || ret_m_ < ret_rcm_ ? m_ : rcm_; }
   //bool canonical_is_reversed() const { return !canonical_ || ret_m_ < ret_rcm_ ? false : true; }
-  const mer_type* operator->() const { return &this->operator*(); }
+  const mer_type* operator->() { return &this->operator*(); }
   mer_iterator& operator++() {
     while(true) {
       while(cseq_ == (*job_)->end) {

@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <signal.h>
+#include <string.h>
 
 #include <iostream>
 #include <fstream>
@@ -227,9 +228,15 @@ int count_main(int argc, char *argv[])
   if(args.min_qual_char_given && args.min_qual_char_arg.size() != 1)
     count_main_cmdline::error("[-Q, --min-qual-char] must be one character.");
 
-  fullseedmer_dna::k(args.mer_len_arg); //TODO seed weight
-  //std::cerr<<std::endl<<"SSeed: "<<args.spaced_seed_arg<<std::endl;
-  mer_dna::k(args.mer_len_arg-5);
+  std::cerr<<std::endl<<"SSeed='"<<args.spaced_seed_arg<<"'"<<std::endl;
+  if (strlen(args.spaced_seed_arg)>0){
+	  fullseedmer_dna::k(args.mer_len_arg); //TODO seed weight
+	  mer_dna::k(args.mer_len_arg-5);
+  } else {
+	  //No spaced seed, thus both mer types are full k-mers
+	  fullseedmer_dna::k(args.mer_len_arg);
+	  mer_dna::k(args.mer_len_arg);
+  }
 
   std::unique_ptr<jellyfish::generator_manager> generator_manager;
   if(args.generator_given) {
@@ -246,7 +253,10 @@ int count_main(int argc, char *argv[])
   }
 
   header.canonical(args.canonical_flag);
-  mer_hash ary(args.size_arg, args.mer_len_arg * 2, args.counter_len_arg, args.threads_arg, args.reprobes_arg);
+  mer_hash ary(args.size_arg,
+		  //args.mer_len_arg * 2,
+		  mer_dna::k() *  2,
+		  args.counter_len_arg, args.threads_arg, args.reprobes_arg);
   if(args.disk_flag)
     ary.do_size_doubling(false);
 
