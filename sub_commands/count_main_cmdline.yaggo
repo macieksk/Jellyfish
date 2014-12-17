@@ -3,13 +3,13 @@ package "jellyfish count"
 
 option("mer-len", "m") {
   description "Length of mer"
-  uint32; required }
+  uint32 }
 option("size", "s") {
   description "Initial hash size"
   uint64; suffix; required }
 option("Z", "spaced-seed") {
   description "Spaced seed, where match is denoted by #, eg. ###__#_###_###"
-  c_string; typestr "seed_string" }
+  c_string; typestr "seed_string"; required }
 option("threads", "t") {
   description "Number of threads"
   uint32; default "1" }

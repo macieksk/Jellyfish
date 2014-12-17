@@ -635,6 +635,7 @@ class mer_base_static : public mer_base<mer_base_static<T, CI> > {
 public:
   typedef T base_type;
   typedef mer_base<mer_base_static<T, CI> > super;
+  typedef mer_base_static<T, CI> this_type;
   static const int class_index = CI;
 
   mer_base_static() : super(k_) { }
@@ -662,6 +663,14 @@ public:
 
   mer_base_static& operator=(const char* s) { return super::operator=(s); }
   mer_base_static& operator=(const std::string& s) { return super::operator=(s); }
+
+  template<int CI1>
+  this_type& operator=(const mer_base_static<T,CI1> & rhs) {
+	  if(rhs.k() != k_)
+	        throw std::length_error(error_different_k);
+	  memcpy(super::_data, rhs.data(), super::nb_words() * sizeof(base_type));
+	  return *this;
+  }
 
   ~mer_base_static() { }
 

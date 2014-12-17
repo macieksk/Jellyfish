@@ -10,28 +10,30 @@
 
 #include <string.h>
 
-#include <boost/iterator/iterator_facade.hpp>
-
 namespace jellyfish {
   namespace seedmod {
 
 
-  	  //This should be an OutputIterator
-     //operator++ <--> ret_m.shift_left(*c);
-    //operator=
+  	//This is an OutputIterator
+    //operator++ <--> ret_m.shift_left(*c);
+    //operator=  rembers c
 	template <class MerTypeOut,
 			 char MATCH_CHR = '#'>
-	class SpacedSeedMatcherIterator : public std::vector<char>
+	class SpacedSeedSquasherIterator : public std::vector<char>
 	{
 		//static const char match_chr = MATCH_CHR;
-		typedef SpacedSeedMatcherIterator<MerTypeOut,MATCH_CHR> this_type;
+		typedef SpacedSeedSquasherIterator<MerTypeOut,MATCH_CHR> this_type;
 
 	public:
-		SpacedSeedMatcherIterator(const char * seed, MerTypeOut & mer)
+		SpacedSeedSquasherIterator(const char * seed, MerTypeOut & mer)
 		:seed_(seed),mer_(mer){}
 
 		this_type& operator=(const char c) {
 			c_=c;
+			return *this;
+		}
+
+		this_type& operator*() {
 			return *this;
 		}
 
@@ -42,11 +44,16 @@ namespace jellyfish {
 			return *this;
 		} //prefix increment
 
+
+		bool at_end() const{
+			return seed_==0;
+		}
+
+
 	private:
 		char c_;
 		const char * seed_;
 		MerTypeOut & mer_;
-
 
 	public:
 
@@ -62,7 +69,17 @@ namespace jellyfish {
 
 	};
 
+
+  }
+}
+
+
+#endif /* SEEDMOD_HPP_ */
+
+
 //   typedef SpacedSeed<'#'> spaced_seed;
+//
+//#include <boost/iterator/iterator_facade.hpp>
 //
 //   namespace impl {
 //	   template <class Value>
@@ -106,9 +123,3 @@ namespace jellyfish {
 //   typedef impl::node_iter<spaced_seed> node_iterator;
 //   typedef impl::node_iter<spaced_seed const> node_const_iterator;
 
-  }
-}
-
-
-
-#endif /* SEEDMOD_HPP_ */

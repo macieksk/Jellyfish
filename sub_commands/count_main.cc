@@ -44,6 +44,8 @@
 #include <jellyfish/generator_manager.hpp>
 #include <sub_commands/count_main_cmdline.hpp>
 
+#include <seedmod/seedmod.hpp>
+
 static count_main_cmdline args; // Command line switches and arguments
 
 namespace err = jellyfish::err;
@@ -60,6 +62,8 @@ using jellyfish::fullseedmer_dna;
 using jellyfish::mer_dna_bloom_counter;
 using jellyfish::mer_dna_bloom_filter;
 typedef std::vector<const char*> file_vector;
+
+typedef jellyfish::seedmod::SpacedSeedSquasherIterator<mer_dna> seed_squasher_iter_type;
 
 // Types for parsing arbitrary sequence ignoring quality scores
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::const_iterator> > sequence_parser;
@@ -82,7 +86,7 @@ public:
 class mer_qual_iterator : public jellyfish::mer_qual_iterator<sequence_qual_parser, mer_dna> {
   typedef jellyfish::mer_qual_iterator<sequence_qual_parser, mer_dna> super;
 public:
-  mer_qual_iterator(sequence_qual_parser& parser, bool canonical = false) :
+  mer_qual_iterator(sequence_qual_parser& parser, bool canonical = false, const char * seed = NULL) :
     super(parser, args.min_qual_char_arg[0], canonical)
   { }
 };
@@ -142,20 +146,19 @@ public:
                    OPERATION op, filter* filter = new struct filter) :
     ary_(ary),
     streams_(file_begin, file_end, pipe_begin, pipe_end, concurent_files),
-    parser_(mer_dna::k(), streams_.nb_streams(), 3 * nb_threads, 4096, streams_),
+    parser_(fullseedmer_dna::k(), streams_.nb_streams(), 3 * nb_threads, 4096, streams_),
     filter_(filter),
     op_(op)
   { }
 
   virtual void start(int thid) {
     size_t count = 0;
-    MerIteratorType mers(parser_, args.canonical_flag);
+    MerIteratorType mers(parser_, args.canonical_flag, args.spaced_seed_arg);
 
     switch(op_) {
      case COUNT:
       for( ; mers; ++mers) {
-    	const mer_dna mer(*mers);
-    	//std::cerr<<"mer:"<<mer.to_str()<<std::endl;
+    	const mer_dna & mer(*mers);
         if((*filter_)(mer))
           ary_.add(mer, 1);
         ++count;
@@ -230,13 +233,16 @@ int count_main(int argc, char *argv[])
 
   std::cerr<<std::endl<<"SSeed='"<<args.spaced_seed_arg<<"'"<<std::endl;
   if (strlen(args.spaced_seed_arg)>0){
-	  fullseedmer_dna::k(args.mer_len_arg); //TODO seed weight
-	  mer_dna::k(args.mer_len_arg-5);
+	  fullseedmer_dna::k(seed_squasher_iter_type::span(args.spaced_seed_arg));
+	  mer_dna::k(seed_squasher_iter_type::weight(args.spaced_seed_arg));
   } else {
 	  //No spaced seed, thus both mer types are full k-mers
 	  fullseedmer_dna::k(args.mer_len_arg);
 	  mer_dna::k(args.mer_len_arg);
   }
+  std::cerr <<std::endl<<"Using seed:"<<(strlen(args.spaced_seed_arg)>0)
+		    <<" span="<<fullseedmer_dna::k()<<" weight="<<mer_dna::k()
+  	  	    <<" canonical="<<args.canonical_flag<<std::endl;
 
   std::unique_ptr<jellyfish::generator_manager> generator_manager;
   if(args.generator_given) {
