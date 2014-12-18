@@ -10,23 +10,59 @@
 
 #include <string.h>
 
+#include <iterator>
+
 namespace jellyfish {
-  namespace seedmod {
+template <class MerTypeOut>
+class mer_shift_left_output_iterator:
+		public std::iterator<std::output_iterator_tag,MerTypeOut>
+{
+private:
+	MerTypeOut & mer_;
 
+public:
+	typedef mer_shift_left_output_iterator<MerTypeOut> this_type;
 
+	mer_shift_left_output_iterator(MerTypeOut & mer)
+			:mer_(mer){}
+
+	this_type& operator=(const char c) {
+		mer_.shift_left(c);
+		return *this;
+	}
+
+	this_type& operator*() {
+		return *this;
+	}
+
+	this_type& operator++(){
+		return *this;
+	} //prefix increment
+};
+
+}
+
+namespace seedmod {
   	//This is an OutputIterator
     //operator++ <--> ret_m.shift_left(*c);
     //operator=  rembers c
-	template <class MerTypeOut,
-			 char MATCH_CHR = '#'>
-	class SpacedSeedSquasherIterator : public std::vector<char>
+	template <class OutMerIterator,
+		      char MATCH_CHR = '#',
+		      char DEL_CHR = '^',
+			  char INS_CHR = 'v'>
+	class SpacedSeedForIndexSquasherIterator
 	{
-		//static const char match_chr = MATCH_CHR;
-		typedef SpacedSeedSquasherIterator<MerTypeOut,MATCH_CHR> this_type;
+	private:
+		char c_;
+		const char * seed_;
+		OutMerIterator & oit_;
 
 	public:
-		SpacedSeedSquasherIterator(const char * seed, MerTypeOut & mer)
-		:seed_(seed),mer_(mer){}
+		typedef SpacedSeedForIndexSquasherIterator<OutMerIterator,
+				MATCH_CHR,DEL_CHR,INS_CHR> this_type;
+
+		SpacedSeedForIndexSquasherIterator(const char * seed, OutMerIterator & oit)
+			:seed_(seed),oit_(oit){}
 
 		this_type& operator=(const char c) {
 			c_=c;
@@ -38,8 +74,17 @@ namespace jellyfish {
 		}
 
 		this_type& operator++(){
-			if (*seed_==MATCH_CHR)
-				mer_.shift_left(c_);
+			do{
+				if(DEL_CHR==*seed_){
+					++seed_;
+					continue;
+				}else if(MATCH_CHR==*seed_){
+					*oit_ = c_;
+				}else if(INS_CHR==*seed_){
+				}
+				//space
+				break;
+			}while (true);
 			++seed_;
 			return *this;
 		} //prefix increment
@@ -49,14 +94,7 @@ namespace jellyfish {
 			return seed_==0;
 		}
 
-
-	private:
-		char c_;
-		const char * seed_;
-		MerTypeOut & mer_;
-
 	public:
-
 		static size_t weight(const char * s){
 			size_t w=0;
 			for (;*s;++s)
@@ -64,14 +102,41 @@ namespace jellyfish {
 			return w;
 		}
 		static size_t span(const char * s){
-			return strlen(s);
+			size_t w=0;
+			for (;*s;++s)
+				if (*s!=INS_CHR) ++w;
+			return w;
 		}
-
+		static bool isfullseed(const char * s){
+					for (;*s;++s)
+						if (*s!=MATCH_CHR)
+							return false;
+					return true;
+		}
 	};
 
+	//ForReadSquasher is the same as ForIndexSquasher
+	//but with DEL_CHR, INS_CHR swapped
+	template <class OutMerIterator,
+			      char MATCH_CHR = '#',
+			      char DEL_CHR = '^',
+				  char INS_CHR = 'v'>
+	class SpacedSeedForReadSquasherIterator:
+			public SpacedSeedForReadSquasherIterator<OutMerIterator,
+													MATCH_CHR,INS_CHR,DEL_CHR>
+	{
+		typedef SpacedSeedForReadSquasherIterator<OutMerIterator,
+				MATCH_CHR,DEL_CHR,INS_CHR> this_type;
+		typedef SpacedSeedForReadSquasherIterator<OutMerIterator,
+				MATCH_CHR,INS_CHR,DEL_CHR> super;
 
-  }
+		SpacedSeedForReadSquasherIterator(const char * seed, OutMerIterator & oit)
+			:super(seed,oit){}
+	};
+
 }
+
+
 
 
 #endif /* SEEDMOD_HPP_ */

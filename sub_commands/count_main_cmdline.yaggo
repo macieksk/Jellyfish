@@ -36,7 +36,7 @@ option("out-counter-len") {
   uint32; default "4"; typestr "Length in bytes" }
 option("C", "canonical") {
   description "Count both strand, canonical representation"
-  flag; off }
+  flag; off}
 option("bc") {
   description "Bloom counter to filter out singleton mers"
   c_string; typestr "peath";  }

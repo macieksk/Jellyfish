@@ -63,7 +63,7 @@ using jellyfish::mer_dna_bloom_counter;
 using jellyfish::mer_dna_bloom_filter;
 typedef std::vector<const char*> file_vector;
 
-typedef jellyfish::seedmod::SpacedSeedSquasherIterator<mer_dna> seed_squasher_iter_type;
+typedef seedmod::SpacedSeedForIndexSquasherIterator<mer_dna> seed_squasher_iter_type;
 
 // Types for parsing arbitrary sequence ignoring quality scores
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::const_iterator> > sequence_parser;
@@ -243,6 +243,11 @@ int count_main(int argc, char *argv[])
   std::cerr <<std::endl<<"Using seed:"<<(strlen(args.spaced_seed_arg)>0)
 		    <<" span="<<fullseedmer_dna::k()<<" weight="<<mer_dna::k()
   	  	    <<" canonical="<<args.canonical_flag<<std::endl;
+  if(args.canonical_flag){
+	  std::cerr <<"Spaced seeds Jellyfish version does not support canonical kmers indexing!"
+	 		    <<std::endl;
+	  exit(-1);
+  }
 
   std::unique_ptr<jellyfish::generator_manager> generator_manager;
   if(args.generator_given) {
