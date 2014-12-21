@@ -63,7 +63,8 @@ using jellyfish::mer_dna_bloom_counter;
 using jellyfish::mer_dna_bloom_filter;
 typedef std::vector<const char*> file_vector;
 
-typedef seedmod::SpacedSeedForIndexSquasherIterator<char,mer_dna> seed_squasher_iter_type;
+typedef seedmod::SpacedSeedForIndexSquasherIterator<typename mer_dna::base_type,
+													mer_dna> seed_squasher_iter_type;
 
 // Types for parsing arbitrary sequence ignoring quality scores
 typedef jellyfish::mer_overlap_sequence_parser<jellyfish::stream_manager<file_vector::const_iterator> > sequence_parser;

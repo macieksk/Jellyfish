@@ -39,8 +39,10 @@ public:
   typedef MerType      mer_type;
   typedef FullSeedMerType      fullseedmer_type;
   typedef SequencePool sequence_parser_type;
-  typedef jellyfish::mer_shift_left_output_iterator<MerType> mer_sleft_oiter;
-  typedef seedmod::SpacedSeedForIndexSquasherIterator<char,mer_sleft_oiter> seed_squasher_iter_type;
+  typedef jellyfish::mer_shift_left_output_iterator<typename mer_type::base_type,
+		  	  	  	  	  	  	  	  	  	  	  MerType> mer_sleft_oiter;
+  typedef seedmod::SpacedSeedForIndexSquasherIterator<typename mer_type::base_type,
+		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_squasher_iter_type;
 
   mer_iterator(SequencePool& seq, bool canonical = false, const char * seed = NULL) :
     job_(new typename SequencePool::job(seq)), cseq_(0), filled_(0), canonical_(canonical),
@@ -70,7 +72,7 @@ public:
 	  	auto squash_mer = [&](const fullseedmer_type & fmer,mer_type & ret_m){
 	  		mer_sleft_oiter meroiter(ret_m);
 	  		seed_squasher_iter_type seed_squash_it(seed_,meroiter);
-	  		fmer.to_chars(seed_squash_it);
+	  		fmer.to_codes(seed_squash_it);
 	  	};
 	  	//if (strlen(seed_)>0) {
 	  	//if (*seed_!=0) {   //TODO change to template instantiation,

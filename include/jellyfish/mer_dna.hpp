@@ -469,6 +469,19 @@ public:
     return it;
   }
 
+  template<typename OutputIterator>
+  OutputIterator to_codes(OutputIterator it) const {
+    int shift  = lshift(); // Number of bits to shift to get base
+
+    for(int j = nb_words() - 1; j >= 0; --j) {
+      base_type w = _data[j];
+      for( ; shift >= 0; shift -= 2, ++it)
+        *it = (w >> shift) & c3;
+      shift = wshift;
+    }
+    return it;
+  }
+
   // Get bits [start, start+len). start must be < 2k, len <=
   // sizeof(base_type) and start+len < 2k. No checks
   // performed. start and len are in bits, not bases.

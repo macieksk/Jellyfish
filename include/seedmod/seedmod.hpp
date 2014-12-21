@@ -13,7 +13,8 @@
 #include <iterator>
 
 namespace jellyfish {
-template <class MerTypeOut>
+template <typename base_type,
+		  class MerTypeOut>
 class mer_shift_left_output_iterator:
 		public std::iterator<std::output_iterator_tag,MerTypeOut>
 {
@@ -21,31 +22,53 @@ private:
 	MerTypeOut & mer_;
 
 public:
-	typedef mer_shift_left_output_iterator<MerTypeOut> this_type;
+	typedef mer_shift_left_output_iterator<base_type,MerTypeOut> this_type;
 
 	mer_shift_left_output_iterator(MerTypeOut & mer)
 			:mer_(mer){}
 
-	this_type& operator=(const char c) {
-		mer_.shift_left(c);
+	this_type& operator=(const base_type & c) {
+		mer_.shift_left((const int &)c);
 		return *this;
 	}
 
-	this_type& operator*() {
-		return *this;
-	}
-
-	this_type& operator++(){
-		return *this;
-	} //prefix increment
+	this_type& operator*() {return *this;}
+	this_type& operator++(){return *this;} //prefix increment
 };
 
 }
 
+namespace kraken {
+template<typename base_type>
+class kmer_shift_left_output_iterator:
+		public std::iterator<std::output_iterator_tag,base_type>
+{
+private:
+	base_type & kmer_;
+	static const base_type c3 = (base_type)0x3;
+
+public:
+	typedef kmer_shift_left_output_iterator<base_type> this_type;
+
+	kmer_shift_left_output_iterator(base_type & kmer)
+			:kmer_(kmer){}
+
+	this_type& operator=(const base_type & c) {
+		//mer_.shift_left(c);
+		kmer_<<=2;
+		kmer_ |= c & c3;
+		return *this;
+	}
+
+	this_type& operator*() {return *this;}
+	this_type& operator++(){return *this;} //prefix increment
+};
+}
+
+
 namespace seedmod {
   	//This is an OutputIterator
-    //operator++ <--> ret_m.shift_left(*c);
-    //operator=  rembers c
+    //operator= <--> ret_m.shift_left(*c);
 	template <typename InputType,
 			  class OutMerIterator,
 		      char MATCH_CHR = '#',
@@ -80,14 +103,8 @@ namespace seedmod {
 			return *this;
 		}
 
-		this_type& operator*() {
-			return *this;
-		}
-
-		this_type& operator++(){
-			return *this;
-		} //prefix increment
-
+		this_type& operator*() {return *this;}
+		this_type& operator++(){return *this;} //prefix increment
 
 		bool at_end() const{
 			return seed_==0;
@@ -116,17 +133,18 @@ namespace seedmod {
 
 	//ForReadSquasher is the same as ForIndexSquasher
 	//but with DEL_CHR, INS_CHR swapped
-	template <class OutMerIterator,
+	template <typename InputType,
+				class OutMerIterator,
 			      char MATCH_CHR = '#',
 			      char DEL_CHR = '^',
 				  char INS_CHR = 'v'>
 	class SpacedSeedForReadSquasherIterator:
-			public SpacedSeedForReadSquasherIterator<OutMerIterator,
+			public SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
 													MATCH_CHR,INS_CHR,DEL_CHR>
 	{
-		typedef SpacedSeedForReadSquasherIterator<OutMerIterator,
+		typedef SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
 				MATCH_CHR,DEL_CHR,INS_CHR> this_type;
-		typedef SpacedSeedForReadSquasherIterator<OutMerIterator,
+		typedef SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
 				MATCH_CHR,INS_CHR,DEL_CHR> super;
 
 		SpacedSeedForReadSquasherIterator(const char * seed, OutMerIterator & oit)
