@@ -40,7 +40,7 @@ public:
   typedef FullSeedMerType      fullseedmer_type;
   typedef SequencePool sequence_parser_type;
   typedef jellyfish::mer_shift_left_output_iterator<MerType> mer_sleft_oiter;
-  typedef seedmod::SpacedSeedForIndexSquasherIterator<mer_sleft_oiter> seed_squasher_iter_type;
+  typedef seedmod::SpacedSeedForIndexSquasherIterator<char,mer_sleft_oiter> seed_squasher_iter_type;
 
   mer_iterator(SequencePool& seq, bool canonical = false, const char * seed = NULL) :
     job_(new typename SequencePool::job(seq)), cseq_(0), filled_(0), canonical_(canonical),
@@ -87,8 +87,9 @@ public:
 	  	//	ret_m_  = m_;
 	  	//	ret_rcm_ = rcm_;
 	  	//}
-	  //std::cerr << std::endl << m_.to_str() << " <--> " << ret_m_.to_str();
-	  return !canonical_ || ret_m_ < ret_rcm_ ? ret_m_ : ret_rcm_;
+	    //std::cerr << std::endl << m_.to_str() << " <--> " << ret_m_.to_str();
+	    //return !canonical_ || ret_m_ < ret_rcm_ ? ret_m_ : ret_rcm_;
+	  	return ret_m_;
   }
   //const mer_type& fullmer() const { return !canonical_ || ret_m_ < ret_rcm_ ? m_ : rcm_; }
   //bool canonical_is_reversed() const { return !canonical_ || ret_m_ < ret_rcm_ ? false : true; }

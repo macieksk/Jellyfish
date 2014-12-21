@@ -46,26 +46,37 @@ namespace seedmod {
   	//This is an OutputIterator
     //operator++ <--> ret_m.shift_left(*c);
     //operator=  rembers c
-	template <class OutMerIterator,
+	template <typename InputType,
+			  class OutMerIterator,
 		      char MATCH_CHR = '#',
 		      char DEL_CHR = '^',
 			  char INS_CHR = 'v'>
 	class SpacedSeedForIndexSquasherIterator
 	{
 	private:
-		char c_;
 		const char * seed_;
 		OutMerIterator & oit_;
 
 	public:
-		typedef SpacedSeedForIndexSquasherIterator<OutMerIterator,
+		typedef SpacedSeedForIndexSquasherIterator<InputType,OutMerIterator,
 				MATCH_CHR,DEL_CHR,INS_CHR> this_type;
 
 		SpacedSeedForIndexSquasherIterator(const char * seed, OutMerIterator & oit)
 			:seed_(seed),oit_(oit){}
 
-		this_type& operator=(const char c) {
-			c_=c;
+		this_type& operator=(const InputType c) {
+			do{
+				if(DEL_CHR==*seed_){
+					++seed_;
+					continue;
+				}else if(MATCH_CHR==*seed_){
+					*oit_ = c;
+				}else if(INS_CHR==*seed_){
+				}
+				//space
+				break;
+			}while (true);
+			++seed_;
 			return *this;
 		}
 
@@ -74,18 +85,6 @@ namespace seedmod {
 		}
 
 		this_type& operator++(){
-			do{
-				if(DEL_CHR==*seed_){
-					++seed_;
-					continue;
-				}else if(MATCH_CHR==*seed_){
-					*oit_ = c_;
-				}else if(INS_CHR==*seed_){
-				}
-				//space
-				break;
-			}while (true);
-			++seed_;
 			return *this;
 		} //prefix increment
 
