@@ -139,12 +139,13 @@ namespace seedmod {
 			      char DEL_CHR = '^',
 				  char INS_CHR = 'v'>
 	class SpacedSeedForReadSquasherIterator:
-			public SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
+			public SpacedSeedForIndexSquasherIterator<InputType,OutMerIterator,
 													MATCH_CHR,INS_CHR,DEL_CHR>
 	{
+	public:
 		typedef SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
 				MATCH_CHR,DEL_CHR,INS_CHR> this_type;
-		typedef SpacedSeedForReadSquasherIterator<InputType,OutMerIterator,
+		typedef SpacedSeedForIndexSquasherIterator<InputType,OutMerIterator,
 				MATCH_CHR,INS_CHR,DEL_CHR> super;
 
 		SpacedSeedForReadSquasherIterator(const char * seed, OutMerIterator & oit)
