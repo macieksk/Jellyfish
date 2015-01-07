@@ -26,6 +26,11 @@ AS_IF([test "x$MD5" = "x"], AC_MSG_ERROR([Could not find md5 hashing program in 
 AC_ARG_VAR([YAGGO], [Yaggo switch parser generator])
 AS_IF([test "x$YAGGO" = "x"], [AC_PATH_PROG([YAGGO], [yaggo], [false])])
 
+AC_CHECK_PROG(YAGGO_CHECK,yaggo,yes)
+if test x"$YAGGO_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([Please install yaggo before installing.])
+fi
+
 dnl define([concat], $1$2$3)dnl
 define([PC_FILE], jellyfish-2.0.pc)
 AC_CONFIG_FILES([
