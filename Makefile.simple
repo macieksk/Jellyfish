@@ -2,7 +2,7 @@
 # name start with a '_' by convention and contain a config.h.
 
 CC = g++
-CPPFLAGS = -Wall -Werror -g -O2 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -I.
+CPPFLAGS = -Wall -g -O2 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -I.
 # Uncomment following to use SSE
 # CPPFLAGS += -msse -msse2 -DSSE
 LDFLAGS = -lpthread
