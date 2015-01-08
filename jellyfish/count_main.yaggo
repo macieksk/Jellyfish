@@ -6,7 +6,10 @@ name "count_args"
 
 option("mer-len", "m") {
   description "Length of mer"
-  uint32; required }
+  uint32; }
+option("Z", "spaced-seed") {
+  description "Spaced seed, where match is denoted by #, eg. ###__#_###_###"
+  c_string; typestr "seed_string"; required }
 option("size", "s") {
   description "Hash size"
   uint64; suffix; required }

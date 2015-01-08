@@ -15,6 +15,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <memory>
 
 class count_args {
  // Boiler plate stuff. Conversion from string to other formats
@@ -138,8 +139,7 @@ class count_args {
       err.assign("Invalid character");
       return (T)0;
     }
-    if(res > ::std::numeric_limits<T>::max() ||
-       res < ::std::numeric_limits<T>::min()) {
+    if(res > ::std::numeric_limits<T>::max()) {
       err.assign("Value out of range");
       return (T)0;
     }
@@ -273,6 +273,8 @@ public:
 
   uint32_t                       mer_len_arg;
   bool                           mer_len_given;
+  const char *                   spaced_seed_arg;
+  bool                           spaced_seed_given;
   uint64_t                       size_arg;
   bool                           size_given;
   uint32_t                       threads_arg;
@@ -341,6 +343,7 @@ public:
 
   count_args() :
     mer_len_arg(), mer_len_given(false),
+    spaced_seed_arg(""), spaced_seed_given(false),
     size_arg(), size_given(false),
     threads_arg(1), threads_given(false),
     output_arg("mer_counts"), output_given(false),
@@ -372,6 +375,7 @@ public:
 
   count_args(int argc, char* argv[]) :
     mer_len_arg(), mer_len_given(false),
+    spaced_seed_arg(""), spaced_seed_given(false),
     size_arg(), size_given(false),
     threads_arg(1), threads_given(false),
     output_arg("mer_counts"), output_given(false),
@@ -404,6 +408,7 @@ public:
   void parse(int argc, char* argv[]) {
     static struct option long_options[] = {
       {"mer-len", 1, 0, 'm'},
+      {"spaced-seed", 1, 0, 'Z'},
       {"size", 1, 0, 's'},
       {"threads", 1, 0, 't'},
       {"output", 1, 0, 'o'},
@@ -436,7 +441,7 @@ public:
       {"version", 0, 0, 'V'},
       {0, 0, 0, 0}
     };
-    static const char *short_options = "hVm:s:t:o:Oc:Cp:rqL:U:wu";
+    static const char *short_options = "hVm:Z:s:t:o:Oc:Cp:rqL:U:wu";
 
     ::std::string err;
 #define CHECK_ERR(type,val,which) if(!err.empty()) { ::std::cerr << "Invalid " #type " '" << val << "' for [" which "]: " << err << "\n"; exit(1); }
@@ -463,12 +468,16 @@ public:
         ::std::cerr << "Use --usage or --help for some help\n";
         exit(1);
       case FULL_HELP_OPT:
-        ::std::cout << usage() << "\n\n" << help() << "\n\n" << hidden() << std::endl;
+        ::std::cout << usage() << "\n\n" << help() << "\n\n" << hidden() << std::flush;
         exit(0);
       case 'm':
         mer_len_given = true;
         mer_len_arg = conv_uint<uint32_t>((const char*)optarg, err, false);
         CHECK_ERR(uint32_t, optarg, "-m, --mer-len=uint32")
+        break;
+      case 'Z':
+        spaced_seed_given = true;
+        spaced_seed_arg = optarg;
         break;
       case 's':
         size_given = true;
@@ -582,8 +591,8 @@ public:
     }
 
     // Check that required switches are present
-    if(!mer_len_given)
-      error("[-m, --mer-len=uint32] required switch");
+    if(!spaced_seed_given)
+      error("[-Z, --spaced-seed=seed_string] required switch");
     if(!size_given)
       error("[-s, --size=uint64] required switch");
 
@@ -594,55 +603,87 @@ public:
       file_arg.push_back(argv[optind]);
     }
   }
+  static const char * usage() { return "Usage: jellyfish count [options] file:path+"; }
+  class error {
+    int code_;
+    std::ostringstream msg_;
 
-#define count_args_USAGE "Usage: jellyfish count [options] file:path+"
+    // Select the correct version (GNU or XSI) version of
+    // strerror_r. strerror_ behaves like the GNU version of strerror_r,
+    // regardless of which version is provided by the system.
+    static const char* strerror__(char* buf, int res) {
+      return res != -1 ? buf : "Invalid error";
+    }
+    static const char* strerror__(char* buf, char* res) {
+      return res;
+    }
+    static const char* strerror_(int err, char* buf, size_t buflen) {
+      return strerror__(buf, strerror_r(err, buf, buflen));
+    }
+    struct no_t { };
 
-  const char * usage() const { return count_args_USAGE; }
-  void error(const char *msg) {
-    ::std::cerr << "Error: " << msg << "\n" << usage()
-              << "\nUse --help for more information"
-              << ::std::endl;
-    exit(1);
+  public:
+    static no_t no;
+    error(int code = EXIT_FAILURE) : code_(code) { }
+    explicit error(const char* msg, int code = EXIT_FAILURE) : code_(code)
+      { msg_ << msg; }
+    error(const std::string& msg, int code = EXIT_FAILURE) : code_(code)
+      { msg_ << msg; }
+    error& operator<<(no_t) {
+      char buf[1024];
+      msg_ << ": " << strerror_(errno, buf, sizeof(buf));
+      return *this;
+    }
+    template<typename T>
+    error& operator<<(const T& x) { msg_ << x; return (*this); }
+    ~error() {
+      ::std::cerr << "Error: " << msg_.str() << "\n"
+                  << usage() << "\n"
+                  << "Use --help for more information"
+                  << ::std::endl;
+      exit(code_);
+    }
+  };
+  static const char * help() { return
+    "Count k-mers or qmers in fasta or fastq files\n\n"
+    "Options (default value in (), *required):\n"
+    " -m, --mer-len=uint32                     Length of mer\n"
+    " -Z, --spaced-seed=seed_string           *Spaced seed, where match is denoted by #, eg. ###__#_###_###\n"
+    " -s, --size=uint64                       *Hash size\n"
+    " -t, --threads=uint32                     Number of threads (1)\n"
+    " -o, --output=string                      Output prefix (mer_counts)\n"
+    " -c, --counter-len=Length in bits         Length of counting field (7)\n"
+    "     --out-counter-len=Length in bytes    Length of counter field in output (4)\n"
+    " -C, --both-strands                       Count both strand, canonical representation (false)\n"
+    " -p, --reprobes=uint32                    Maximum number of reprobes (62)\n"
+    " -r, --raw                                Write raw database (false)\n"
+    " -q, --quake                              Quake compatibility mode (false)\n"
+    "     --quality-start=uint32               Starting ASCII for quality values (64)\n"
+    "     --min-quality=uint32                 Minimum quality. A base with lesser quality becomes an N (0)\n"
+    " -L, --lower-count=uint64                 Don't output k-mer with count < lower-count\n"
+    " -U, --upper-count=uint64                 Don't output k-mer with count > upper-count\n"
+    "     --invalid-char=warn|ignore|error     How to treat invalid characters. The char is changed to a N. (warn)\n"
+    "     --matrix=Matrix file                 Hash function binary matrix\n"
+    "     --timing=Timing file                 Print timing information\n"
+    "     --stats=Stats file                   Print stats\n"
+    "     --usage                              Usage\n"
+    " -h, --help                               This message\n"
+    "     --full-help                          Detailed help\n"
+    " -V, --version                            Version";
   }
-
-#define count_args_HELP "Count k-mers or qmers in fasta or fastq files\n\n" \
-  "Options (default value in (), *required):\n" \
-  " -m, --mer-len=uint32                    *Length of mer\n" \
-  " -s, --size=uint64                       *Hash size\n" \
-  " -t, --threads=uint32                     Number of threads (1)\n" \
-  " -o, --output=string                      Output prefix (mer_counts)\n" \
-  " -c, --counter-len=Length in bits         Length of counting field (7)\n" \
-  "     --out-counter-len=Length in bytes    Length of counter field in output (4)\n" \
-  " -C, --both-strands                       Count both strand, canonical representation (false)\n" \
-  " -p, --reprobes=uint32                    Maximum number of reprobes (62)\n" \
-  " -r, --raw                                Write raw database (false)\n" \
-  " -q, --quake                              Quake compatibility mode (false)\n" \
-  "     --quality-start=uint32               Starting ASCII for quality values (64)\n" \
-  "     --min-quality=uint32                 Minimum quality. A base with lesser quality becomes an N (0)\n" \
-  " -L, --lower-count=uint64                 Don't output k-mer with count < lower-count\n" \
-  " -U, --upper-count=uint64                 Don't output k-mer with count > upper-count\n" \
-  "     --invalid-char=warn|ignore|error     How to treat invalid characters. The char is changed to a N. (warn)\n" \
-  "     --matrix=Matrix file                 Hash function binary matrix\n" \
-  "     --timing=Timing file                 Print timing information\n" \
-  "     --stats=Stats file                   Print stats\n" \
-  "     --usage                              Usage\n" \
-  " -h, --help                               This message\n" \
-  "     --full-help                          Detailed help\n" \
-  " -V, --version                            Version"
-  const char * help() const { return count_args_HELP; }
-
-#define count_args_HIDDEN "Hidden options:\n" \
-  " -O                                       Output is the file name (not a prefix) (false)\n" \
-  "     --both                               Write list and raw database (false)\n" \
-  " -w, --no-write                           Don't write database (false)\n" \
-  " -u, --measure                            Write usage statistics (false)\n" \
-  "     --buffers=uint64                     Number of buffers per thread\n" \
-  "     --buffer-size=uint64                 Size of buffers (8192)\n" \
-  "     --out-buffer-size=uint64             Size of output buffer per thread (20000000)\n" \
-  "     --lock                               Lock hash in memory (no swapping) (false)\n" \
-  "     --stream                             Read from stream, not memory map (false)"
-
-  const char * hidden() const { return count_args_HIDDEN; }
+  static const char* hidden() { return
+    "Hidden options:\n"
+    " -O                                       Output is the file name (not a prefix) (false)\n"
+    "     --both                               Write list and raw database (false)\n"
+    " -w, --no-write                           Don't write database (false)\n"
+    " -u, --measure                            Write usage statistics (false)\n"
+    "     --buffers=uint64                     Number of buffers per thread\n"
+    "     --buffer-size=uint64                 Size of buffers (8192)\n"
+    "     --out-buffer-size=uint64             Size of output buffer per thread (20000000)\n"
+    "     --lock                               Lock hash in memory (no swapping) (false)\n"
+    "     --stream                             Read from stream, not memory map (false)\n"
+    "";
+  }
   void print_version(::std::ostream &os = std::cout) const {
 #ifndef PACKAGE_VERSION
 #define PACKAGE_VERSION "0.0.0"
@@ -651,6 +692,7 @@ public:
   }
   void dump(::std::ostream &os = std::cout) {
     os << "mer_len_given:" << mer_len_given << " mer_len_arg:" << mer_len_arg << "\n";
+    os << "spaced_seed_given:" << spaced_seed_given << " spaced_seed_arg:" << spaced_seed_arg << "\n";
     os << "size_given:" << size_given << " size_arg:" << size_arg << "\n";
     os << "threads_given:" << threads_given << " threads_arg:" << threads_arg << "\n";
     os << "output_given:" << output_given << " output_arg:" << output_arg << "\n";

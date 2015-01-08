@@ -136,7 +136,7 @@ public:
     parser = new jellyfish::parse_dna(files.begin(), files.end(),
                                       args->mer_len_arg, args->buffers_arg,
                                       args->buffer_size_arg);
-    ary = new inv_hash_t::storage_t(args->size_arg, 2*args->mer_len_arg,
+    ary = new inv_hash_t::storage_t(args->size_arg, 2*args->mer_len_arg, //TODO
                                     args->counter_len_arg, 
                                     args->reprobes_arg, 
                                     jellyfish::quadratic_reprobes);
