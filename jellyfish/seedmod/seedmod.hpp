@@ -36,9 +36,44 @@ public:
 	this_type& operator++(){return *this;} //prefix increment
 };
 
+
+template <typename base_type,
+		  class MerTypeOut>
+class mer_explicit_shift_left_output_iterator:
+		public std::iterator<std::output_iterator_tag,MerTypeOut>
+{
+private:
+	MerTypeOut & mer_;
+
+public:
+	typedef mer_explicit_shift_left_output_iterator<base_type,MerTypeOut> this_type;
+
+	mer_explicit_shift_left_output_iterator(MerTypeOut & mer)
+			:mer_(mer){}
+
+	this_type& operator=(const base_type & c) {
+		mer_.shift_left((const int &)c);
+		return *this;
+	}
+
+	this_type& operator*() {return *this;}
+	this_type& operator++(){return *this;} //prefix increment
+};
+
+
 }
 
 namespace kraken {
+
+template<typename base_type, typename OutputIterator>
+static OutputIterator to_codes(const int k, const base_type & w, OutputIterator it) {
+	static const base_type c3 = (base_type)0x3;
+	int shift  = (k<<1) - 2; // Number of bits to shift to get base
+  for( ; shift >= 0; shift -= 2, ++it)
+      *it = (w >> shift) & c3;
+  return it;
+}
+
 template<typename base_type>
 class kmer_shift_left_output_iterator:
 		public std::iterator<std::output_iterator_tag,base_type>
