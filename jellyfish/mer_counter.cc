@@ -196,7 +196,9 @@ public:
             							//args->mer_len_arg, //TODO
     							seed_squasher_iterator::span(args->spaced_seed_arg),
 										   args->buffers_arg,
-                                           args->buffer_size_arg, args->quality_start_arg,
+                                           args->buffer_size_arg,
+										   args->spaced_seed_arg,
+										   args->quality_start_arg,
                                            args->min_quality_arg);
     ary = new inv_hash_t::storage_t(args->size_arg,
 				//2*args->mer_len_arg, //TODO
@@ -288,7 +290,9 @@ public:
 			//args->mer_len_arg, //TODO
 			seed_squasher_iterator::span(args->spaced_seed_arg),
 										   args->buffers_arg,
-                                           args->buffer_size_arg, args->quality_start_arg,
+                                           args->buffer_size_arg,
+										   args->spaced_seed_arg,
+										   args->quality_start_arg,
                                            args->min_quality_arg);
     ary = new direct_index_t::storage_t(
 				//2*args->mer_len_arg, //TODO

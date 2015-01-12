@@ -26,6 +26,8 @@
 #include <jellyfish/allocators_mmap.hpp>
 #include <jellyfish/dna_codes.hpp>
 
+#include <jellyfish/seedmod/seedmod.hpp>
+
 namespace jellyfish {
   class parse_qual_dna : public double_fifo_input<seq_qual_parser::sequence_t> {
     typedef std::vector<const char *> fary_t;
@@ -41,6 +43,7 @@ namespace jellyfish {
     const char              min_q;
     bool                    canonical;
     seq_qual_parser        *fparser;
+    const char 				*Spaced_seed_cstr;
 
   public:
     /* Action to take for a given letter in fasta file:
@@ -51,6 +54,7 @@ namespace jellyfish {
      */
     parse_qual_dna(const fary_t &_files, uint_t _mer_len, 
                    unsigned int nb_buffers, size_t _buffer_size,
+				   const char * seed_cstr,
                    const char _qs, const char _min_q); 
 
     ~parse_qual_dna() { }
@@ -62,7 +66,7 @@ namespace jellyfish {
       parse_qual_dna *parser;
       bucket_t       *sequence;
       const uint_t    mer_len, lshift;
-      uint64_t        kmer, rkmer;
+      uint64_t        kmer, rkmer, ret_mer;
       const uint64_t  masq;
       uint_t          cmlen;
       const bool      canonical;
@@ -75,7 +79,7 @@ namespace jellyfish {
       thread(parse_qual_dna *_parser, const char _qs, const char _min_q) :
         parser(_parser), sequence(0),
         mer_len(_parser->mer_len), lshift(2 * (mer_len - 1)),
-        kmer(0), rkmer(0), masq((1UL << (2 * mer_len)) - 1),
+        kmer(0), rkmer(0), ret_mer(0), masq((1UL << (2 * mer_len)) - 1),
         cmlen(0), canonical(parser->canonical),
         q_thresh(_qs + _min_q),
         distinct(0), total(0), error_report(0) { }
@@ -85,7 +89,7 @@ namespace jellyfish {
 
       template<typename T>
       void parse(T &counter) {
-        cmlen = kmer = rkmer = 0;
+        cmlen = kmer = rkmer = ret_mer = 0;
         while((sequence = parser->next())) {
           const char         *start = sequence->start;
           const char * const  end   = sequence->end;
@@ -106,15 +110,26 @@ namespace jellyfish {
 
             default:
               kmer = ((kmer << 2) & masq) | c;
-              rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
+              //rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
               if(++cmlen >= mer_len) {
-                cmlen = mer_len;
+                cmlen  = mer_len;
+                ret_mer = 0;
+                kraken::squash_kmer_for_index(parser->Spaced_seed_cstr, mer_len,
+              		  	  	  	  	  	  	  	  	 kmer,ret_mer);
                 typename T::val_type oval;
-                if(canonical)
-                  counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
-                else
-                  counter->add(kmer, 1, &oval);
-                distinct += !oval;
+                if(canonical){
+                  //counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
+                  std::cerr<<"Jellyfish with SpacedSeeds does not support canonical kmers."
+                		    <<std::endl;
+                  exit(-1);
+                }else{
+                  counter->add(ret_mer, 1, &oval);
+                  //DEBUG
+                  //std::cerr<<kraken::kmer_to_str(mer_len,kmer)<<" <--> "
+                  //		   <<kraken::kmer_to_str(mer_len,ret_mer)
+                  //	       <<std::endl;
+                }
+                distinct += oval == (typename T::val_type)0;
                 ++total;
               }
             }
