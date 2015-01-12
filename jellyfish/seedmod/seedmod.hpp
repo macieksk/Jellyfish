@@ -63,44 +63,6 @@ public:
 
 }
 
-namespace kraken {
-
-template<typename base_type, typename OutputIterator>
-static OutputIterator to_codes(const int k, const base_type & w, OutputIterator it) {
-	static const base_type c3 = (base_type)0x3;
-	int shift  = (k<<1) - 2; // Number of bits to shift to get base
-  for( ; shift >= 0; shift -= 2, ++it)
-      *it = (w >> shift) & c3;
-  return it;
-}
-
-template<typename base_type>
-class kmer_shift_left_output_iterator:
-		public std::iterator<std::output_iterator_tag,base_type>
-{
-private:
-	base_type & kmer_;
-	static const base_type c3 = (base_type)0x3;
-
-public:
-	typedef kmer_shift_left_output_iterator<base_type> this_type;
-
-	kmer_shift_left_output_iterator(base_type & kmer)
-			:kmer_(kmer){}
-
-	this_type& operator=(const base_type & c) {
-		//mer_.shift_left(c);
-		kmer_<<=2;
-		kmer_ |= c & c3;
-		return *this;
-	}
-
-	this_type& operator*() {return *this;}
-	this_type& operator++(){return *this;} //prefix increment
-};
-}
-
-
 namespace seedmod {
   	//This is an OutputIterator
     //operator= <--> ret_m.shift_left(*c);
@@ -188,6 +150,74 @@ namespace seedmod {
 	};
 
 }
+
+
+namespace kraken {
+
+template<typename base_type, typename OutputIterator>
+static OutputIterator to_codes(const size_t k, const base_type & w, OutputIterator it) {
+	static const base_type c3 = (base_type)0x3;
+	int shift  = (k<<1) - 2; // Number of bits to shift to get base
+  for( ; shift >= 0; shift -= 2, ++it)
+      *it = (w >> shift) & c3;
+  return it;
+}
+
+
+
+template<typename base_type>
+class kmer_shift_left_output_iterator:
+		public std::iterator<std::output_iterator_tag,base_type>
+{
+private:
+	base_type & kmer_;
+	static const base_type c3 = (base_type)0x3;
+
+public:
+	typedef kmer_shift_left_output_iterator<base_type> this_type;
+
+	kmer_shift_left_output_iterator(base_type & kmer)
+			:kmer_(kmer){}
+
+	this_type& operator=(const base_type & c) {
+		//mer_.shift_left(c);
+		kmer_<<=2;
+		kmer_ |= c & c3;
+		return *this;
+	}
+
+	this_type& operator*() {return *this;}
+	this_type& operator++(){return *this;} //prefix increment
+};
+
+//Chaining input/output iterators to squash seed
+template<typename base_type>
+static void squash_kmer_for_read(const char * seed, size_t seed_len,
+								 const base_type & fmer, base_type & ret_m){
+    typedef kraken::kmer_shift_left_output_iterator<base_type>
+    									mer_sleft_oiter;
+    typedef seedmod::SpacedSeedForReadSquasherIterator<base_type,
+      		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_read_squasher_iter_type;
+  	mer_sleft_oiter meroiter(ret_m);
+  	seed_read_squasher_iter_type seed_squash_it(seed,meroiter);
+  	kraken::to_codes(seed_len,fmer,seed_squash_it);
+}
+
+template<typename base_type>
+static void squash_kmer_for_index(const char * seed, size_t seed_len,
+								  const base_type & fmer, base_type & ret_m){
+    typedef kraken::kmer_shift_left_output_iterator<base_type>
+    									mer_sleft_oiter;
+	typedef seedmod::SpacedSeedForIndexSquasherIterator<base_type,
+          		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_index_squasher_iter_type;
+    mer_sleft_oiter meroiter(ret_m);
+    seed_index_squasher_iter_type seed_squash_it(seed,meroiter);
+    kraken::to_codes(seed_len,fmer,seed_squash_it);
+}
+
+}
+
+
 
 
 
