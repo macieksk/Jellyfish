@@ -4,9 +4,9 @@ package "jellyfish count"
 output "count_main_cmdline.hpp"
 name "count_args"
 
-option("mer-len", "m") {
-  description "Length of mer"
-  uint32; }
+#option("mer-len", "m") {
+#  description "Length of mer"
+#  uint32; }
 option("Z", "spaced-seed") {
   description "Spaced seed, where match is denoted by #, eg. ###__#_###_###"
   c_string; typestr "seed_string"; required }
@@ -28,9 +28,9 @@ option("counter-len", "c") {
 option("out-counter-len") {
   description "Length of counter field in output"
   uint32; default "4"; typestr "Length in bytes" }
-option("both-strands", "C") {
-  description "Count both strand, canonical representation"
-  flag; off }
+#option("both-strands", "C") {
+#  description "Count both strand, canonical representation"
+#  flag; off }
 option("reprobes", "p") {
   description "Maximum number of reprobes"
   uint32; default "62" }

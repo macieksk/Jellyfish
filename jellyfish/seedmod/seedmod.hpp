@@ -154,8 +154,12 @@ namespace seedmod {
 
 namespace kraken {
 
+static const char rev_codes[4] = { 'A', 'C', 'G', 'T' };
+inline static char rev_code(int x) { return rev_codes[x]; }
+
+
 template<typename base_type, typename OutputIterator>
-static OutputIterator to_codes(const size_t k, const base_type & w, OutputIterator it) {
+static OutputIterator kmer_to_codes(const size_t k, const base_type & w, OutputIterator it) {
 	static const base_type c3 = (base_type)0x3;
 	int shift  = (k<<1) - 2; // Number of bits to shift to get base
   for( ; shift >= 0; shift -= 2, ++it)
@@ -163,6 +167,23 @@ static OutputIterator to_codes(const size_t k, const base_type & w, OutputIterat
   return it;
 }
 
+template<typename base_type, typename OutputIterator>
+static OutputIterator kmer_to_chars(const size_t k, const base_type & w, OutputIterator it) {
+	static const base_type c3 = (base_type)0x3;
+	int shift  = (k<<1) - 2; // Number of bits to shift to get base
+  for( ; shift >= 0; shift -= 2, ++it)
+      *it = rev_code((w >> shift) & c3);
+  return it;
+}
+
+
+// Transform the k-mer into a C++ string.
+template<typename base_type>
+std::string kmer_to_str(const size_t k, const base_type & w){
+  std::string res(k, '\0');
+  kmer_to_chars(k,w,res.begin());
+  return res;
+}
 
 
 template<typename base_type>
@@ -200,7 +221,7 @@ static void squash_kmer_for_read(const char * seed, size_t seed_len,
       		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_read_squasher_iter_type;
   	mer_sleft_oiter meroiter(ret_m);
   	seed_read_squasher_iter_type seed_squash_it(seed,meroiter);
-  	kraken::to_codes(seed_len,fmer,seed_squash_it);
+  	kraken::kmer_to_codes(seed_len,fmer,seed_squash_it);
 }
 
 template<typename base_type>
@@ -212,7 +233,7 @@ static void squash_kmer_for_index(const char * seed, size_t seed_len,
           		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_index_squasher_iter_type;
     mer_sleft_oiter meroiter(ret_m);
     seed_index_squasher_iter_type seed_squash_it(seed,meroiter);
-    kraken::to_codes(seed_len,fmer,seed_squash_it);
+    kraken::kmer_to_codes(seed_len,fmer,seed_squash_it);
 }
 
 }

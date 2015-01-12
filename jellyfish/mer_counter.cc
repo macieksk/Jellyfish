@@ -42,6 +42,10 @@
 #include <jellyfish/count_main_cmdline.hpp>
 #include <jellyfish/noop_dumper.hpp>
 
+#include <jellyfish/seedmod/seedmod.hpp>
+typedef seedmod::SpacedSeedForIndexSquasherIterator<uint64_t,
+		    kraken::kmer_shift_left_output_iterator<uint64_t> > seed_squasher_iterator;
+
 // Temporary
 //#include <jellyfish/measure_dumper.hpp>
 
@@ -134,9 +138,14 @@ public:
     mer_counting<jellyfish::parse_dna, inv_hash_t>(_args)
   {
     parser = new jellyfish::parse_dna(files.begin(), files.end(),
-                                      args->mer_len_arg, args->buffers_arg,
-                                      args->buffer_size_arg);
-    ary = new inv_hash_t::storage_t(args->size_arg, 2*args->mer_len_arg, //TODO
+                                      //args->mer_len_arg, //TODO
+    		seed_squasher_iterator::span(args->spaced_seed_arg),
+									  args->buffers_arg,
+                                      args->buffer_size_arg,
+									  args->spaced_seed_arg);
+    ary = new inv_hash_t::storage_t(args->size_arg,
+    								//2*args->mer_len_arg, //TODO
+    		2*seed_squasher_iterator::weight(args->spaced_seed_arg),
                                     args->counter_len_arg, 
                                     args->reprobes_arg, 
                                     jellyfish::quadratic_reprobes);
@@ -184,10 +193,14 @@ public:
     mer_counting<jellyfish::parse_qual_dna, inv_hash_t>(_args)
   {
     parser = new jellyfish::parse_qual_dna(files,
-                                           args->mer_len_arg, args->buffers_arg,
+            							//args->mer_len_arg, //TODO
+    							seed_squasher_iterator::span(args->spaced_seed_arg),
+										   args->buffers_arg,
                                            args->buffer_size_arg, args->quality_start_arg,
                                            args->min_quality_arg);
-    ary = new inv_hash_t::storage_t(args->size_arg, 2*args->mer_len_arg,
+    ary = new inv_hash_t::storage_t(args->size_arg,
+				//2*args->mer_len_arg, //TODO
+    			2*seed_squasher_iterator::weight(args->spaced_seed_arg),
                                     args->counter_len_arg, 
                                     args->reprobes_arg, 
                                     jellyfish::quadratic_reprobes);
@@ -233,9 +246,15 @@ public:
     mer_counting<jellyfish::parse_dna, direct_index_t>(_args)
   {
     parser = new jellyfish::parse_dna(files.begin(), files.end(),
-                                      args->mer_len_arg, args->buffers_arg,
-                                      args->buffer_size_arg);
-    ary = new direct_index_t::storage_t(2 * args->mer_len_arg);
+            						//args->mer_len_arg, //TODO
+    								seed_squasher_iterator::span(args->spaced_seed_arg),
+									  args->buffers_arg,
+                                      args->buffer_size_arg,
+									  args->spaced_seed_arg);
+    ary = new direct_index_t::storage_t(
+    		        //2*args->mer_len_arg, //TODO
+    				2*seed_squasher_iterator::weight(args->spaced_seed_arg)
+    		);
     hash = new direct_index_t(ary);
     if(args->no_write_flag) {
       dumper = new jellyfish::noop_dumper();
@@ -266,10 +285,15 @@ public:
     mer_counting<jellyfish::parse_qual_dna, direct_index_t>(_args)
   {
     parser = new jellyfish::parse_qual_dna(files,
-                                           args->mer_len_arg, args->buffers_arg,
+			//args->mer_len_arg, //TODO
+			seed_squasher_iterator::span(args->spaced_seed_arg),
+										   args->buffers_arg,
                                            args->buffer_size_arg, args->quality_start_arg,
                                            args->min_quality_arg);
-    ary = new direct_index_t::storage_t(2 * args->mer_len_arg);
+    ary = new direct_index_t::storage_t(
+				//2*args->mer_len_arg, //TODO
+    			2*seed_squasher_iterator::weight(args->spaced_seed_arg)
+    );
     hash = new direct_index_t(ary);
     if(args->no_write_flag) {
       dumper = new jellyfish::noop_dumper();
@@ -300,10 +324,14 @@ public:
     mer_counting<jellyfish::parse_quake, fastq_hash_t>(_args)
   {
     parser = new jellyfish::parse_quake(args->file_arg,
-                                        args->mer_len_arg, args->buffers_arg, 
+			//args->mer_len_arg, //TODO
+			seed_squasher_iterator::span(args->spaced_seed_arg),
+										args->buffers_arg,
                                         args->buffer_size_arg, 
                                         args->quality_start_arg);
-    ary = new fastq_hash_t::storage_t(args->size_arg, 2*args->mer_len_arg,
+    ary = new fastq_hash_t::storage_t(args->size_arg,
+    			//2*args->mer_len_arg, //TODO
+    			2*seed_squasher_iterator::weight(args->spaced_seed_arg),
                                       args->reprobes_arg, 
                                       jellyfish::quadratic_reprobes);
     hash = new fastq_hash_t(ary);
@@ -322,9 +350,11 @@ public:
 int count_main(int argc, char *argv[])
 {
   count_args args(argc, argv);
+  std::cerr<<"Using seed: |"<<args.spaced_seed_arg<<"|"<<std::endl;
 
-  if(args.mer_len_arg < 2 || args.mer_len_arg > 31)
-    die << "Invalid mer length '" << args.mer_len_arg
+  if(seed_squasher_iterator::span(args.spaced_seed_arg) < 2 ||
+     seed_squasher_iterator::span(args.spaced_seed_arg) > 31)
+    die << "Invalid seed span(length) '" << seed_squasher_iterator::span(args.spaced_seed_arg)
         << "'. It must be in [2, 31].";
 
   Time start;
@@ -334,7 +364,8 @@ int count_main(int argc, char *argv[])
 
   if(args.quake_flag) {
     counter = new mer_counting_quake(args.file_arg, args);
-  } else if(ceilLog2((unsigned long)args.size_arg) > 2 * (unsigned long)args.mer_len_arg) {
+  } else if(ceilLog2((unsigned long)args.size_arg) >
+  	  	  2 * (unsigned long)seed_squasher_iterator::weight(args.spaced_seed_arg)) {
     if(args.min_quality_given)
       counter = new mer_counting_qual_fasta_direct(args.file_arg, args);
     else

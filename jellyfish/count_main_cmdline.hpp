@@ -271,8 +271,6 @@ public:
     static const char* const  strs[4];
   };
 
-  uint32_t                       mer_len_arg;
-  bool                           mer_len_given;
   const char *                   spaced_seed_arg;
   bool                           spaced_seed_given;
   uint64_t                       size_arg;
@@ -342,7 +340,6 @@ public:
   };
 
   count_args() :
-    mer_len_arg(), mer_len_given(false),
     spaced_seed_arg(""), spaced_seed_given(false),
     size_arg(), size_given(false),
     threads_arg(1), threads_given(false),
@@ -374,7 +371,6 @@ public:
   { }
 
   count_args(int argc, char* argv[]) :
-    mer_len_arg(), mer_len_given(false),
     spaced_seed_arg(""), spaced_seed_given(false),
     size_arg(), size_given(false),
     threads_arg(1), threads_given(false),
@@ -407,7 +403,6 @@ public:
 
   void parse(int argc, char* argv[]) {
     static struct option long_options[] = {
-      {"mer-len", 1, 0, 'm'},
       {"spaced-seed", 1, 0, 'Z'},
       {"size", 1, 0, 's'},
       {"threads", 1, 0, 't'},
@@ -441,7 +436,7 @@ public:
       {"version", 0, 0, 'V'},
       {0, 0, 0, 0}
     };
-    static const char *short_options = "hVm:Z:s:t:o:Oc:Cp:rqL:U:wu";
+    static const char *short_options = "hVZ:s:t:o:Oc:Cp:rqL:U:wu";
 
     ::std::string err;
 #define CHECK_ERR(type,val,which) if(!err.empty()) { ::std::cerr << "Invalid " #type " '" << val << "' for [" which "]: " << err << "\n"; exit(1); }
@@ -470,11 +465,6 @@ public:
       case FULL_HELP_OPT:
         ::std::cout << usage() << "\n\n" << help() << "\n\n" << hidden() << std::flush;
         exit(0);
-      case 'm':
-        mer_len_given = true;
-        mer_len_arg = conv_uint<uint32_t>((const char*)optarg, err, false);
-        CHECK_ERR(uint32_t, optarg, "-m, --mer-len=uint32")
-        break;
       case 'Z':
         spaced_seed_given = true;
         spaced_seed_arg = optarg;
@@ -647,7 +637,6 @@ public:
   static const char * help() { return
     "Count k-mers or qmers in fasta or fastq files\n\n"
     "Options (default value in (), *required):\n"
-    " -m, --mer-len=uint32                     Length of mer\n"
     " -Z, --spaced-seed=seed_string           *Spaced seed, where match is denoted by #, eg. ###__#_###_###\n"
     " -s, --size=uint64                       *Hash size\n"
     " -t, --threads=uint32                     Number of threads (1)\n"
@@ -691,7 +680,6 @@ public:
     os << PACKAGE_VERSION << "\n";
   }
   void dump(::std::ostream &os = std::cout) {
-    os << "mer_len_given:" << mer_len_given << " mer_len_arg:" << mer_len_arg << "\n";
     os << "spaced_seed_given:" << spaced_seed_given << " spaced_seed_arg:" << spaced_seed_arg << "\n";
     os << "size_given:" << size_given << " size_arg:" << size_arg << "\n";
     os << "threads_given:" << threads_given << " threads_arg:" << threads_arg << "\n";

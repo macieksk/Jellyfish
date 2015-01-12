@@ -26,6 +26,8 @@
 #include <jellyfish/allocators_mmap.hpp>
 #include <jellyfish/dna_codes.hpp>
 
+#include <jellyfish/seedmod/seedmod.hpp>
+
 namespace jellyfish {
   class parse_dna : public double_fifo_input<sequence_parser::sequence_t> {
     typedef std::vector<const char *> fary_t;
@@ -39,6 +41,7 @@ namespace jellyfish {
     allocators::mmap            buffer_data;
     bool                        canonical;
     sequence_parser            *fparser;
+    const char 				   *Spaced_seed_cstr;
 
   public:
     /* Action to take for a given letter in fasta file:
@@ -78,7 +81,8 @@ namespace jellyfish {
 
     template<typename T>
     parse_dna(T _files_start, T _files_end, uint_t _mer_len, 
-              unsigned int nb_buffers, size_t _buffer_size); 
+              unsigned int nb_buffers, size_t _buffer_size,
+			  const char * seed_cstr);
 
     ~parse_dna() {
       delete [] seam;
@@ -91,7 +95,7 @@ namespace jellyfish {
       parse_dna      *parser;
       bucket_t       *sequence;
       const uint_t    mer_len, lshift;
-      uint64_t        kmer, rkmer;
+      uint64_t        kmer, rkmer, ret_mer;
       const uint64_t  masq;
       uint_t          cmlen;
       const bool      canonical;
@@ -103,7 +107,7 @@ namespace jellyfish {
       explicit thread(parse_dna *_parser) :
         parser(_parser), sequence(0),
         mer_len(_parser->mer_len), lshift(2 * (mer_len - 1)),
-        kmer(0), rkmer(0), masq((1UL << (2 * mer_len)) - 1),
+        kmer(0), rkmer(0), ret_mer(0), masq((1UL << (2 * mer_len)) - 1),
         cmlen(0), canonical(parser->canonical),
         distinct(0), total(0), error_report(0) {}
 
@@ -113,7 +117,7 @@ namespace jellyfish {
 
       template<typename T>
       void parse(T &counter) {
-        cmlen = kmer = rkmer = 0;
+        cmlen = kmer = rkmer = ret_mer = 0;
         while((sequence = parser->next())) {
           const char         *start = sequence->start;
           const char * const  end   = sequence->end;
@@ -130,14 +134,25 @@ namespace jellyfish {
 
             default:
               kmer = ((kmer << 2) & masq) | c;
-              rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
+              //rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
               if(++cmlen >= mer_len) {
                 cmlen  = mer_len;
+                ret_mer = 0;
+                kraken::squash_kmer_for_index(parser->Spaced_seed_cstr, mer_len,
+              		  	  	  	  	  	  	  	  	 kmer,ret_mer);
                 typename T::val_type oval;
-                if(canonical)
-                  counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
-                else
-                  counter->add(kmer, 1, &oval);
+                if(canonical){
+                  //counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
+                  std::cerr<<"Jellyfish with SpacedSeeds does not support canonical kmers."
+                		    <<std::endl;
+                  exit(-1);
+                }else{
+                  counter->add(ret_mer, 1, &oval);
+                  //DEBUG
+                  //std::cerr<<kraken::kmer_to_str(mer_len,kmer)<<" <--> "
+                  //		   <<kraken::kmer_to_str(mer_len,ret_mer)
+                  //	       <<std::endl;
+                }
                 distinct += oval == (typename T::val_type)0;
                 ++total;
               }
@@ -171,11 +186,13 @@ namespace jellyfish {
 template<typename T>
 jellyfish::parse_dna::parse_dna(T _files_start, T _files_end,
                      uint_t _mer_len,
-                     unsigned int nb_buffers, size_t _buffer_size) :
+                     unsigned int nb_buffers, size_t _buffer_size,
+					 const char * seed_cstr) :
   double_fifo_input<sequence_parser::sequence_t>(nb_buffers), mer_len(_mer_len), 
   buffer_size(allocators::mmap::round_to_page(_buffer_size)),
   files(_files_start, _files_end), current_file(files.begin()),
-  have_seam(false), buffer_data(buffer_size * nb_buffers), canonical(false)
+  have_seam(false), buffer_data(buffer_size * nb_buffers), canonical(false),
+  Spaced_seed_cstr(seed_cstr)
 {
   seam        = new char[mer_len];
   memset(seam, 'A', mer_len);
