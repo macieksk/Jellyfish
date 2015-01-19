@@ -37,30 +37,6 @@ public:
 };
 
 
-template <typename base_type,
-		  class MerTypeOut>
-class mer_explicit_shift_left_output_iterator:
-		public std::iterator<std::output_iterator_tag,MerTypeOut>
-{
-private:
-	MerTypeOut & mer_;
-
-public:
-	typedef mer_explicit_shift_left_output_iterator<base_type,MerTypeOut> this_type;
-
-	mer_explicit_shift_left_output_iterator(MerTypeOut & mer)
-			:mer_(mer){}
-
-	this_type& operator=(const base_type & c) {
-		mer_.shift_left((const int &)c);
-		return *this;
-	}
-
-	this_type& operator*() {return *this;}
-	this_type& operator++(){return *this;} //prefix increment
-};
-
-
 }
 
 namespace seedmod {
@@ -219,6 +195,7 @@ static void squash_kmer_for_read(const char * seed, size_t seed_len,
     									mer_sleft_oiter;
     typedef seedmod::SpacedSeedForReadSquasherIterator<base_type,
       		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_read_squasher_iter_type;
+    ret_m = 0;
   	mer_sleft_oiter meroiter(ret_m);
   	seed_read_squasher_iter_type seed_squash_it(seed,meroiter);
   	kraken::kmer_to_codes(seed_len,fmer,seed_squash_it);
@@ -231,6 +208,7 @@ static void squash_kmer_for_index(const char * seed, size_t seed_len,
     									mer_sleft_oiter;
 	typedef seedmod::SpacedSeedForIndexSquasherIterator<base_type,
           		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_index_squasher_iter_type;
+	ret_m = 0;
     mer_sleft_oiter meroiter(ret_m);
     seed_index_squasher_iter_type seed_squash_it(seed,meroiter);
     kraken::kmer_to_codes(seed_len,fmer,seed_squash_it);
