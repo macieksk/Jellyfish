@@ -135,7 +135,7 @@ inline static char rev_code(int x) { return rev_codes[x]; }
 
 
 template<typename base_type, typename OutputIterator>
-static OutputIterator kmer_to_codes(const size_t k, const base_type & w, OutputIterator it) {
+static OutputIterator kmer_to_codes(const size_t k, const base_type & w, OutputIterator & it) {
 	static const base_type c3 = (base_type)0x3;
 	int shift  = (k<<1) - 2; // Number of bits to shift to get base
   for( ; shift >= 0; shift -= 2, ++it)
@@ -144,7 +144,7 @@ static OutputIterator kmer_to_codes(const size_t k, const base_type & w, OutputI
 }
 
 template<typename base_type, typename OutputIterator>
-static OutputIterator kmer_to_chars(const size_t k, const base_type & w, OutputIterator it) {
+static OutputIterator kmer_to_chars(const size_t k, const base_type & w, OutputIterator & it) {
 	static const base_type c3 = (base_type)0x3;
 	int shift  = (k<<1) - 2; // Number of bits to shift to get base
   for( ; shift >= 0; shift -= 2, ++it)
