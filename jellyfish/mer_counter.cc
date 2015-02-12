@@ -357,9 +357,9 @@ int count_main(int argc, char *argv[])
   std::cerr<<"Using seed: |"<<args.spaced_seed_arg<<"|"<<std::endl;
 
   if(seed_squasher_iterator::span(args.spaced_seed_arg) < 2 ||
-     seed_squasher_iterator::span(args.spaced_seed_arg) > 31)
+     seed_squasher_iterator::span(args.spaced_seed_arg) > 63)
     die << "Invalid seed span(length) '" << seed_squasher_iterator::span(args.spaced_seed_arg)
-        << "'. It must be in [2, 31].";
+        << "'. It must be in [2, 63].";
 
   Time start;
   mer_counting_base *counter;

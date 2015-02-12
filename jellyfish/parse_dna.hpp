@@ -95,8 +95,9 @@ namespace jellyfish {
       parse_dna      *parser;
       bucket_t       *sequence;
       const uint_t    mer_len, lshift;
-      uint64_t        kmer, rkmer, ret_mer;
-      const uint64_t  masq;
+      __uint128_t        kmer, rkmer;
+      __uint128_t  masq;
+      uint64_t        ret_mer;         
       uint_t          cmlen;
       const bool      canonical;
       uint64_t        distinct, total;
@@ -109,7 +110,12 @@ namespace jellyfish {
         mer_len(_parser->mer_len), lshift(2 * (mer_len - 1)),
         kmer(0), rkmer(0), ret_mer(0), masq((1UL << (2 * mer_len)) - 1),
         cmlen(0), canonical(parser->canonical),
-        distinct(0), total(0), error_report(0) {}
+        distinct(0), total(0), error_report(0) {
+	    //Initialize again for 128b
+	    masq = 1;
+	    masq <<= (2*mer_len);
+	    masq -= 1;
+	}
 
       uint64_t get_uniq() const { return 0; }
       uint64_t get_distinct() const { return distinct; }
