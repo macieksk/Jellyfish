@@ -188,12 +188,12 @@ public:
 };
 
 //Chaining input/output iterators to squash seed
-template<typename base_type>
+template<typename base_type_in, typename base_type_out>
 static void squash_kmer_for_read(const char * seed, size_t seed_len,
-								 const base_type & fmer, base_type & ret_m){
-    typedef kraken::kmer_shift_left_output_iterator<base_type>
+								 const base_type_in & fmer, base_type_out & ret_m){
+    typedef kraken::kmer_shift_left_output_iterator<base_type_out>
     									mer_sleft_oiter;
-    typedef seedmod::SpacedSeedForReadSquasherIterator<base_type,
+    typedef seedmod::SpacedSeedForReadSquasherIterator<base_type_in,
       		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_read_squasher_iter_type;
     ret_m = 0;
   	mer_sleft_oiter meroiter(ret_m);
@@ -201,12 +201,12 @@ static void squash_kmer_for_read(const char * seed, size_t seed_len,
   	kraken::kmer_to_codes(seed_len,fmer,seed_squash_it);
 }
 
-template<typename base_type>
+template<typename base_type_in, typename base_type_out>
 static void squash_kmer_for_index(const char * seed, size_t seed_len,
-								  const base_type & fmer, base_type & ret_m){
-    typedef kraken::kmer_shift_left_output_iterator<base_type>
+								  const base_type_in & fmer, base_type_out & ret_m){
+    typedef kraken::kmer_shift_left_output_iterator<base_type_out>
     									mer_sleft_oiter;
-	typedef seedmod::SpacedSeedForIndexSquasherIterator<base_type,
+	typedef seedmod::SpacedSeedForIndexSquasherIterator<base_type_in,
           		  	  	  	  	  	  	  	  	  mer_sleft_oiter> seed_index_squasher_iter_type;
 	ret_m = 0;
     mer_sleft_oiter meroiter(ret_m);
