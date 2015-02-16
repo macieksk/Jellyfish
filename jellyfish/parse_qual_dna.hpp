@@ -67,7 +67,7 @@ namespace jellyfish {
       bucket_t       *sequence;
       const uint_t    mer_len, lshift;
       __uint128_t        kmer, rkmer;
-      __uint128_t  masq;
+      const __uint128_t  masq;
       uint64_t        ret_mer;      
       uint_t          cmlen;
       const bool      canonical;
@@ -80,15 +80,10 @@ namespace jellyfish {
       thread(parse_qual_dna *_parser, const char _qs, const char _min_q) :
         parser(_parser), sequence(0),
         mer_len(_parser->mer_len), lshift(2 * (mer_len - 1)),
-        kmer(0), rkmer(0), ret_mer(0), masq((1UL << (2 * mer_len)) - 1),
+        kmer(0), rkmer(0), ret_mer(0), masq((~(__uint128_t)(0))^((~(__uint128_t)(0))<<(2*mer_len))),
         cmlen(0), canonical(parser->canonical),
         q_thresh(_qs + _min_q),
-        distinct(0), total(0), error_report(0) { 
-	    //Initialize again for 128b
-	    masq = 1;
-	    masq <<= (2*mer_len);
-	    masq -= 1;
-	}
+        distinct(0), total(0), error_report(0) {}
 
       uint64_t get_distinct() const { return distinct; }
       uint64_t get_total() const { return total; }
