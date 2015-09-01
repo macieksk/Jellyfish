@@ -135,27 +135,30 @@ namespace jellyfish {
 
             default:
               kmer = ((kmer << 2) & masq) | c;
-              //rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
+              rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
               if(++cmlen >= mer_len) {
                 cmlen  = mer_len;
                 ret_mer = 0;
                 kraken::squash_kmer_for_index(parser->Spaced_seed_cstr, mer_len,
               		  	  	  	  	  	  	  	  	 kmer,ret_mer);
                 typename T::val_type oval;
-                if(canonical){
+                if(canonical){ //Now treated as reverse
                   //counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
-                  std::cerr<<"Jellyfish with SpacedSeeds does not support canonical kmers."
-                		    <<std::endl;
-                  exit(-1);
-                }else{
                   counter->add(ret_mer, 1, &oval);
+                  distinct += oval == (typename T::val_type)0;
+                  ++total;
+
+                  ret_mer = 0;
+                  kraken::squash_kmer_for_index(parser->Spaced_seed_cstr, mer_len,
+                                                     rkmer,ret_mer);
+                }
+                counter->add(ret_mer, 1, &oval);
+                distinct += oval == (typename T::val_type)0;
+                ++total;
                   //DEBUG
                   //std::cerr<<kraken::kmer_to_str(mer_len,kmer)<<" <--> "
                   //		   <<kraken::kmer_to_str(mer_len,ret_mer)
-                  //	       <<std::endl;
-                }
-                distinct += oval == (typename T::val_type)0;
-                ++total;
+                  //	       <<std::endl;                                                
               }
             }
           }
